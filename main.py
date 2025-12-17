@@ -1,11 +1,47 @@
 import sys
 import os
-from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
-from PyQt6.QtGui import QIcon, QAction
+
+# Force XCB (X11) backend to bypass strict Wayland window placement restrictions
+# This allows 'Always on Top' and programmatic positioning to work correctly.
+os.environ["QT_QPA_PLATFORM"] = "xcb"
+
+from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QDialog, QVBoxLayout, QLabel, QPushButton, QKeySequenceEdit
+from PyQt6.QtGui import QIcon, QAction, QKeySequence
 from PyQt6.QtCore import QObject
 
 from snipper import Snipper
 from floating_widget import FloatingWidget
+from config_manager import ConfigManager
+
+class SettingsDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Settings")
+        self.setFixedSize(300, 150)
+        
+        layout = QVBoxLayout(self)
+        
+        layout.addWidget(QLabel("Capture Hotkey:"))
+        
+        self.key_edit = QKeySequenceEdit(self)
+        current_hotkey = ConfigManager.get_hotkey()
+        self.key_edit.setKeySequence(QKeySequence(current_hotkey))
+        layout.addWidget(self.key_edit)
+        
+        save_btn = QPushButton("Save", self)
+        save_btn.clicked.connect(self.save_settings)
+        layout.addWidget(save_btn)
+        
+    def save_settings(self):
+        # Determine the key sequence string
+        seq = self.key_edit.keySequence().toString()
+        # Convert to a format friendly for 'keyboard' module if possible, 
+        # or just save as Qt string and let the main app handle conversion/warning.
+        # 'keyboard' module likes 'ctrl+shift+s', Qt gives 'Ctrl+Shift+S'.
+        # Usually case insensitive.
+        if seq:
+            ConfigManager.set_hotkey(seq)
+        self.accept()
 
 class BoraUbuntu(QObject):
     def __init__(self):
@@ -27,6 +63,10 @@ class BoraUbuntu(QObject):
         self.capture_action = QAction("Capture", self)
         self.capture_action.triggered.connect(self.start_capture)
         self.menu.addAction(self.capture_action)
+        
+        self.settings_action = QAction("Settings", self)
+        self.settings_action.triggered.connect(self.open_settings)
+        self.menu.addAction(self.settings_action)
         
         self.quit_action = QAction("Quit", self)
         self.quit_action.triggered.connect(self.app.quit)
@@ -54,8 +94,8 @@ class BoraUbuntu(QObject):
         self.snipper.capture_signal.connect(self.create_floating_window)
         # Snipper shows itself in its __init__ (which is a bit aggressive but fine for now)
 
-    def create_floating_window(self, pixmap):
-        fw = FloatingWidget(pixmap)
+    def create_floating_window(self, pixmap, rect):
+        fw = FloatingWidget(pixmap, rect)
         # When window closes, remove from list ??
         # For now just keep them appended. In a long running app, we'd want to cleanup.
         # Let's add a cleanup hook
@@ -67,29 +107,31 @@ class BoraUbuntu(QObject):
         if window in self.floating_windows:
             self.floating_windows.remove(window)
 
+    def open_settings(self):
+        dlg = SettingsDialog()
+        if dlg.exec():
+            # Reload hotkeys
+            self.setup_hotkeys()
+
     def setup_hotkeys(self):
         try:
-            import keyboard
-            # Hotkey: Ctrl+Shift+S (You can change this)
-            # Note: On Linux, this might need sudo if not using specific permissions.
-            # But the user mentioned it's a resident app.
-            keyboard.add_hotkey('ctrl+shift+s', self.start_capture_safe)
-            print("Hotkey registered: Ctrl+Shift+S")
-        except ImportError:
-            print("Keyboard module not found. Hotkeys disabled.")
+            from hotkey_listener import HotkeyListener
+            
+            # Stop existing listener if any
+            if hasattr(self, 'hotkey_listener') and self.hotkey_listener:
+                self.hotkey_listener.stop()
+            
+            hotkey = ConfigManager.get_hotkey()
+            self.hotkey_listener = HotkeyListener(hotkey, self.start_capture_safe)
+            self.hotkey_listener.start()
+            
+            print(f"Hotkey listener started for: {hotkey}")
         except Exception as e:
             print(f"Failed to setup hotkeys: {e}")
 
     def start_capture_safe(self):
-        # Hotkeys run in a separate thread usually, so we should use signals/slots or current app context
-        # to trigger the UI safely on the main thread.
-        # But for simple triggering, it might be okay. To be safe, let's defer it.
-        # However, Qt objects must be touched from the main thread.
-        # Let's use QMetaObject.invokeMethod or similar if we were strict. 
-        # But 'keyboard' callbacks might crash PyQt if we touch GUI directly.
-        # A simple way that often works in PyQt6 is just calling it, but better is using a signal.
-        # Let's emit a signal from a QObject if we can, but we are inside the class.
-        # We'll use QTimer.singleShot(0, ...) to push it to the main event loop.
+        # Keyboard library callback runs in a separate thread.
+        # We must invoke GUI methods on the main thread.
         from PyQt6.QtCore import QTimer
         QTimer.singleShot(0, self.start_capture)
 

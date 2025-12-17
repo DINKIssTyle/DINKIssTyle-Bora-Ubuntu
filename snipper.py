@@ -1,10 +1,10 @@
 import sys
-from PyQt6.QtWidgets import QWidget, QApplication
+from PyQt6.QtWidgets import QWidget, QApplication, QMessageBox
 from PyQt6.QtCore import Qt, QRect, pyqtSignal, QPoint
 from PyQt6.QtGui import QPainter, QColor, QPen, QBrush, QPixmap, QScreen
 
 class Snipper(QWidget):
-    capture_signal = pyqtSignal(QPixmap)
+    capture_signal = pyqtSignal(QPixmap, QRect)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -68,14 +68,21 @@ class Snipper(QWidget):
                 os.remove(temp_filename)
                 
                 if not pixmap.isNull():
-                    # Update geometry to match the pixmap (assuming full screen capture)
-                    # Note: Multiscreen handling on Wayland via gnome-screenshot flattens screens or captures primary?
-                    # Usually catches the combined desktop.
+                    # Update geometry to match the pixmap
                     self.resize(pixmap.width(), pixmap.height())
                     self.move(0, 0)
                     return pixmap
+            except subprocess.CalledProcessError:
+                print("gnome-screenshot failed.")
+            except FileNotFoundError:
+                print("gnome-screenshot not found.")
+                from PyQt6.QtWidgets import QMessageBox
+                QMessageBox.warning(None, "Capture Failed", 
+                                    "Wayland session detected but 'gnome-screenshot' is missing.\n"
+                                    "Please install it: sudo apt install gnome-screenshot")
+                # Fall through to try MSS or return black
             except Exception as e:
-                print(f"Wayland capture failed: {e}. Falling back to mss (might show black screen).")
+                print(f"Wayland capture failed: {e}")
 
         # Default / Fallback to MSS (X11 / macOS / Windows)
         try:
@@ -148,7 +155,11 @@ class Snipper(QWidget):
             if selection_rect.width() > 10 and selection_rect.height() > 10:
                 if self.full_screen_pixmap:
                     cropped = self.full_screen_pixmap.copy(selection_rect)
-                    self.capture_signal.emit(cropped)
+                    # selection_rect is in local coords, which match global coords if full screen
+                    # But let's map to global just in case we change window logic later
+                    global_pos = self.mapToGlobal(selection_rect.topLeft())
+                    global_rect = QRect(global_pos, selection_rect.size())
+                    self.capture_signal.emit(cropped, global_rect)
                 self.close()
             else:
                 self.start_point = QPoint()

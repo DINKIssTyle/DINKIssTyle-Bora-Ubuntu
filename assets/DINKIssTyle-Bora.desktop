@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=DINKIssTyle Bora
+Comment=Korean Input Method and Utilities
+Exec=/home/USER_PLACEHOLDER/.local/bin/DINKIssTyle-Bora
+Icon=utilities-terminal
+Type=Application
+Categories=Utility;
+Terminal=false
