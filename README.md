@@ -1,49 +1,52 @@
-# Bora for Ubuntu
-A simple floating screenshot tool for Ubuntu, inspired by Fuwari (macOS).
-This app allows you to capture a region of your screen and float it as a window that stays on top of other applications.
+# DINKIssTyle Bora (Ubuntu Edition)
+
+A premium floating screenshot tool for Ubuntu, inspired by Fuwari (macOS).
+Capture any region of your screen and float it as an "Always on Top" window for reference.
 
 ## Features
-- **Capture**: Select a region of the screen to capture.
-- **Float**: The captured image floats in a frameless window.
-- **Always on Top**: Floating images stay above other windows.
-- **Interactions**:
-    - **Drag**: Move the floating image.
-    - **Scroll**: Adjust opacity.
-    - **Right Click**: Menu to Save, Copy to Clipboard, or Close.
+-   **Smart Capture**: Works seamlessly on both **Wayland** (via `gnome-screenshot`) and **X11**.
+-   **Floating widget**: Drag, move, and keep your screenshots visible while you work.
+-   **Global Hotkeys**: 
+    -   Default: `Meta+Shift+S` (Configurable via Settings).
+    -   Powered by a custom `evdev` driver for maximum stability on Linux.
+-   **Polished UI**: Drop shadows, smooth interactions, and native desktop integration.
+-   **Shortcuts**:
+    -   `Ctrl+W` / `Ctrl+Q`: Close floating widget.
+    -   `Right-Click`: Context menu (Save, Copy, Close).
 
 ## Installation
-1. Install Python 3 and pip if not installed:
-   ```bash
-   sudo apt update
-   sudo apt install python3 python3-pip
-   ```
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   *Note: If you are on a managed environment, you might need to use `python3 -m pip install -r requirements.txt --break-system-packages` or use a virtual environment.*
-   
-   **Virtual Environment (Recommended):**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
 
-## Usage
-Run the application:
-```bash
-python3 main.py
-```
-A tray icon (camera/menu icon) will appear. Click it or right-click to select **Capture**.
+### Method 1: Easy Install (Recommended)
+This installs the standalone binary, sets up permissions, and creates a desktop shortcut.
 
-## Wayland Note
-On Ubuntu 22.04 and later, Wayland is the default display server. Screen capture applications often face restrictions on Wayland.
-This app uses `mss` which attempts to capture the screen. If you see a black screen or capture fails:
-- Try logging in with **Ubuntu on Xorg** at the login screen.
-- Or ensure `XWayland` is active.
+1.  Download the source.
+2.  Run the installer:
+    ```bash
+    chmod +x install.sh
+    ./install.sh
+    ```
+3.  **Logout and Login** (Required for hotkey permissions).
 
-## Project Structure
-- `main.py`: Entry point and System Tray handling.
-- `snipper.py`: Screen capture overlay logic.
-- `floating_widget.py`: The floating image window logic.
+### Method 2: Development / Source
+If you want to run from source or modify the code:
+
+1.  Install `uv` (modern Python package manager):
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+2.  Install dependencies and run:
+    ```bash
+    uv sync
+    uv run main.py
+    ```
+
+## Requirements
+-   **System**: Ubuntu 22.04 / 24.04 (Wayland or X11)
+-   **Dependencies**: `libxcb-cursor0`, `gnome-screenshot` (Installed automatically by `install.sh`)
+-   **Permissions**: User must be in the `input` group for global hotkeys (Configured automatically by `install.sh`).
+
+## Troubleshooting
+-   **Hotkeys not working?** 
+    Ensure you are in the input group: `groups | grep input`. If empty, run `./install.sh` again and **logout**.
+-   **Black screen capture?**
+    Ensure `gnome-screenshot` is installed: `sudo apt install gnome-screenshot`.
