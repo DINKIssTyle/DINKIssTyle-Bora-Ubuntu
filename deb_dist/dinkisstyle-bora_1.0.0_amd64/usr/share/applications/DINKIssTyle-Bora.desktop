@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Bora
+Comment=Screen Capture and Floating Window Utility
+Exec=/usr/bin/DINKIssTyle-Bora
+Icon=dinkisstyle-bora
+Type=Application
+Categories=Utility;
+Terminal=false

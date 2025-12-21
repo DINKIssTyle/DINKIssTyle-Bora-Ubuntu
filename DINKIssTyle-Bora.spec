@@ -1,9 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = []
+datas = [('assets', 'assets')]
 binaries = []
-hiddenimports = ['evdev', 'PyQt6']
+hiddenimports = ['evdev', 'PyQt6', 'mss', 'numpy', 'PIL']
+tmp_ret = collect_all('mss')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('evdev')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 

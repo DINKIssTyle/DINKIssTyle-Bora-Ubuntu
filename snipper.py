@@ -147,7 +147,7 @@ class Snipper(QWidget):
             self.update()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton and self.is_snipping:
             self.is_snipping = False
             selection_rect = QRect(self.start_point, self.end_point).normalized()
             
@@ -168,4 +168,5 @@ class Snipper(QWidget):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
+            self.is_snipping = False
             self.close()

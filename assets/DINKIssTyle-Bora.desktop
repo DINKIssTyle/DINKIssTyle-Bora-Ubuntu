@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=DINKIssTyle Bora
-Comment=Korean Input Method and Utilities
+Name=Bora
+Comment=Screen Capture and Floating Window Utility
 Exec=/home/USER_PLACEHOLDER/.local/bin/DINKIssTyle-Bora
 Icon=utilities-terminal
 Type=Application

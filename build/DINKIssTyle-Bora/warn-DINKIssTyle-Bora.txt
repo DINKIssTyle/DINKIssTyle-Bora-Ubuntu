@@ -15,8 +15,8 @@ IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
             tracking down the missing module yourself. Thanks!
 
 missing module named _winapi - imported by encodings (delayed, conditional, optional), ntpath (optional), shutil (conditional), subprocess (conditional), multiprocessing.connection (optional), multiprocessing.spawn (delayed, conditional), multiprocessing.reduction (conditional), multiprocessing.shared_memory (conditional), multiprocessing.heap (conditional), multiprocessing.popen_spawn_win32 (top-level), asyncio.windows_events (top-level), asyncio.windows_utils (top-level), mimetypes (optional)
-missing module named nt - imported by os (delayed, conditional, optional), ntpath (optional), shutil (conditional), importlib._bootstrap_external (conditional), ctypes (delayed, conditional)
 missing module named winreg - imported by importlib._bootstrap_external (conditional), platform (delayed, optional), mimetypes (optional), urllib.request (delayed, conditional, optional), setuptools._distutils.compilers.C.msvc (top-level), setuptools.msvc (conditional)
+missing module named nt - imported by os (delayed, conditional, optional), ntpath (optional), shutil (conditional), importlib._bootstrap_external (conditional), ctypes (delayed, conditional)
 missing module named _frozen_importlib_external - imported by importlib._bootstrap (delayed), importlib (optional), importlib.abc (optional), zipimport (top-level)
 excluded module named _frozen_importlib - imported by importlib (optional), importlib.abc (optional), zipimport (top-level)
 missing module named typing_extensions.Buffer - imported by setuptools._vendor.typing_extensions (top-level), setuptools._vendor.wheel.wheelfile (conditional)
@@ -48,6 +48,7 @@ missing module named _manylinux - imported by packaging._manylinux (delayed, opt
 missing module named importlib_resources - imported by setuptools._vendor.jaraco.text (optional)
 missing module named trove_classifiers - imported by setuptools.config._validate_pyproject.formats (optional)
 missing module named pyimod02_importers - imported by /home/dinki/github/DINKIssTyle-Bora-Ubuntu/.venv/lib/python3.12/site-packages/PyInstaller/hooks/rthooks/pyi_rth_pkgutil.py (delayed)
+missing module named 'ctypes.macholib' - imported by ctypes.util (conditional)
 missing module named _dummy_thread - imported by numpy._core.arrayprint (optional)
 missing module named 'numpy_distutils.cpuinfo' - imported by numpy.f2py.diagnose (delayed, conditional, optional)
 missing module named 'numpy_distutils.fcompiler' - imported by numpy.f2py.diagnose (delayed, conditional, optional)
@@ -238,4 +239,3 @@ missing module named numpy._core.all - imported by numpy._core (top-level), nump
 missing module named numpy._core.add - imported by numpy._core (top-level), numpy.linalg._linalg (top-level), numpy (conditional)
 missing module named yaml - imported by numpy.__config__ (delayed)
 missing module named numpy._distributor_init_local - imported by numpy (optional), numpy._distributor_init (optional)
-missing module named 'ctypes.macholib' - imported by ctypes.util (conditional)

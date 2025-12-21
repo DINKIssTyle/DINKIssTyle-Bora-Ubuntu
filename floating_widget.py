@@ -24,6 +24,10 @@ class FloatingWidget(QWidget):
         self.shortcut_quit = QShortcut(QKeySequence("Ctrl+Q"), self)
         self.shortcut_quit.activated.connect(self.close)
         
+        # Copy Shortcut (Ctrl+C)
+        self.shortcut_copy = QShortcut(QKeySequence("Ctrl+C"), self)
+        self.shortcut_copy.activated.connect(self.copy_to_clipboard)
+        
         # Layout setup for shadow
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(20, 20, 20, 20) # Margins for shadow
@@ -97,6 +101,8 @@ class FloatingWidget(QWidget):
         if self.target_geometry:
             print(f"DEBUG: Placing at {self.target_geometry}")
             self.setGeometry(self.target_geometry)
+            # Set minimum size to prevent shrinking below initial capture size
+            self.setMinimumSize(self.target_geometry.size())
         else:
             print("DEBUG: No geometry, centering")
             margins = self.layout.contentsMargins()
@@ -104,6 +110,8 @@ class FloatingWidget(QWidget):
             h = self.original_pixmap.height() + margins.top() + margins.bottom()
             self.resize(w, h)
             self.center_on_screen()
+             # Set minimum size to prevent shrinking below initial capture size
+            self.setMinimumSize(w, h)
 
         self.raise_()
         self.activateWindow()
@@ -199,44 +207,25 @@ class FloatingWidget(QWidget):
         # Actually better to use diff from previous drag_pos
         self.drag_position = global_pos # update for next step
         
-        # logic needs to be delta based
-        #Wait, drag_position was Global Pos.
-        # diff is delta vector.
-        
-        # But previous logic was: diff = global_pos - start_drag_pos
-        # Let's use delta.
-        # Store prev_global_pos instead of drag_position in dragging?
-        
-        # Let's fix handle_resize to use delta from last event
-        # Logic matches standard Qt simple resize
-        
-        pass # To fully implement, we need careful delta.
-        # Simpler: just use startSystemMove/Resize if on Wayland? But we forced XCB.
-        
-        # Re-implementing manual resize correctly:
         geo = self.geometry()
         edge = self.resize_edge
-        
-        # Note: diff calculation above (global_pos - drag_position) is actually 
-        # (Current Mouse) - (Mouse at Press). This is total delta. 
-        # But I updated self.drag_position = global_pos at end. So it IS step delta.
-        # Wait, lines 185: diff = global_pos - self.drag_position.
-        # line 186: self.drag_position = global_pos.
-        # Yes, this is step delta.
         
         delta_x = diff.x()
         delta_y = diff.y()
         
+        min_w = self.minimumWidth()
+        min_h = self.minimumHeight()
+
         if 'r' in edge:
-            geo.setWidth(max(100, geo.width() + delta_x))
+            geo.setWidth(max(min_w, geo.width() + delta_x))
         if 'b' in edge:
-            geo.setHeight(max(100, geo.height() + delta_y))
+            geo.setHeight(max(min_h, geo.height() + delta_y))
         if 'l' in edge:
-            new_w = max(100, geo.width() - delta_x)
+            new_w = max(min_w, geo.width() - delta_x)
             if new_w != geo.width():
                 geo.setLeft(geo.left() + delta_x)
         if 't' in edge:
-            new_h = max(100, geo.height() - delta_y)
+            new_h = max(min_h, geo.height() - delta_y)
             if new_h != geo.height():
                 geo.setTop(geo.top() + delta_y)
                 
@@ -285,3 +274,31 @@ class FloatingWidget(QWidget):
     def copy_to_clipboard(self):
         clipboard = QGuiApplication.clipboard()
         clipboard.setPixmap(self.original_pixmap)
+        self.show_toast("Copied!")
+
+    def show_toast(self, message):
+        # Create a label for the toast
+        toast = QLabel(message, self)
+        toast.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        toast.setStyleSheet("""
+            QLabel {
+                background-color: rgba(0, 0, 0, 180);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 15px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+        """)
+        toast.adjustSize()
+        
+        # Position at the center
+        x = (self.width() - toast.width()) // 2
+        y = (self.height() - toast.height()) // 2
+        toast.move(x, y)
+        
+        toast.show()
+        toast.raise_()
+        
+        # Fade out or just hide after delay
+        QTimer.singleShot(1500, toast.deleteLater)
