@@ -1,9 +1,0 @@
-Package: dinkisstyle-bora
-Version: 1.0.0
-Section: utils
-Priority: optional
-Architecture: amd64
-Depends: libxcb-cursor0, gnome-screenshot, libxcb-xinerama0
-Maintainer: DINKI <dinki@example.com>
-Description: Screen capture and input utility for Ubuntu
- Floating window capture tool with clipboard features.

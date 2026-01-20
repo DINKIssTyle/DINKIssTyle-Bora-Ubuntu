@@ -1,6 +1,0 @@
-#!/bin/sh
-echo "DINKIssTyle-Bora installed!"
-echo "NOTE: To use global hotkeys, your user usually needs to be in the 'input' group."
-echo "Run: sudo usermod -aG input $USER"
-echo "Then logout and login again."
-exit 0

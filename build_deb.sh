@@ -1,99 +1,106 @@
 #!/bin/bash
 set -e
 
-APP_NAME="DINKIssTyle-Bora"
-PACKAGE_NAME="dinkisstyle-bora"
+APP_NAME="bora"
 VERSION="1.0.0"
 ARCH="amd64"
-OUTPUT_DIR="deb_dist"
-STAGING_DIR="$OUTPUT_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORK_DIR="$SCRIPT_DIR/deb_dist"
+DIST_DIR="$SCRIPT_DIR/dist"
+ICON_DIR="$SCRIPT_DIR/assets"
 
-echo "🔨 Starting .deb build process for $APP_NAME..."
+echo "==================================="
+echo "  Bora .deb Build Script"
+echo "==================================="
 
-# 1. Build the binary
-echo "📦 Building binary..."
+# 0. Check PyInstaller
+if ! command -v pyinstaller &> /dev/null; then
+    echo "Error: PyInstaller is not installed."
+    echo "Please run: pip3 install --user pyinstaller"
+    exit 1
+fi
 
-# Clean previous builds
-rm -rf build dist
+# 1. Build Binary
+echo "[1/5] Building binary..."
+cd "$SCRIPT_DIR"
+# Clean previous build
+rm -rf "$DIST_DIR" "$SCRIPT_DIR/build"
 
-# Build using PyInstaller via uv
-echo "Running PyInstaller..."
-uv run pyinstaller --noconsole --onefile --name DINKIssTyle-Bora \
-    --hidden-import=evdev \
+pyinstaller \
+    --onefile \
+    --name="$APP_NAME" \
+    --windowed \
+    --add-data="assets:assets" \
     --hidden-import=PyQt6 \
     --hidden-import=mss \
-    --hidden-import=numpy \
     --hidden-import=PIL \
-    --add-data "assets:assets" \
-    --collect-all=mss \
-    --collect-all=evdev \
+    --hidden-import=keyboard \
+    --hidden-import=numpy \
     main.py
 
-echo "Build complete! Binary is in dist/DINKIssTyle-Bora"
+# 2. Prepare Directory Structure
+echo "[2/5] Creating directory structure..."
+rm -rf "$WORK_DIR"
+mkdir -p "$WORK_DIR/DEBIAN"
+mkdir -p "$WORK_DIR/usr/bin"
+mkdir -p "$WORK_DIR/usr/share/applications"
+mkdir -p "$WORK_DIR/usr/share/icons/hicolor/128x128/apps"
 
-# 2. Prepare directories
-echo "📂 Preparing directory structure..."
-rm -rf "$OUTPUT_DIR"
-mkdir -p "$STAGING_DIR/usr/bin"
-mkdir -p "$STAGING_DIR/usr/share/applications"
-mkdir -p "$STAGING_DIR/usr/share/icons/hicolor/256x256/apps"
-mkdir -p "$STAGING_DIR/DEBIAN"
+# 3. Copy Files
+echo "[3/5] Copying files..."
+if [ -f "$DIST_DIR/$APP_NAME" ]; then
+    cp "$DIST_DIR/$APP_NAME" "$WORK_DIR/usr/bin/"
+    chmod 755 "$WORK_DIR/usr/bin/$APP_NAME"
+else
+    echo "Error: Binary not found at $DIST_DIR/$APP_NAME"
+    exit 1
+fi
 
-# 3. Copy files
-echo "COPY Creating package files..."
+# Copy Icon
+if [ -f "$ICON_DIR/icon.png" ]; then
+    cp "$ICON_DIR/icon.png" "$WORK_DIR/usr/share/icons/hicolor/128x128/apps/$APP_NAME.png"
+else
+    echo "Warning: Icon not found at $ICON_DIR/icon.png"
+fi
 
-# Binary
-cp "dist/$APP_NAME" "$STAGING_DIR/usr/bin/$APP_NAME"
-chmod 755 "$STAGING_DIR/usr/bin/$APP_NAME"
-
-# Icon
-cp "assets/icon.png" "$STAGING_DIR/usr/share/icons/hicolor/256x256/apps/${PACKAGE_NAME}.png"
-
-# Desktop Entry
-# We manually create/modify the desktop file for the system-wide installation
-cat > "$STAGING_DIR/usr/share/applications/${APP_NAME}.desktop" <<EOF
+# Create Desktop File for Package
+cat > "$WORK_DIR/usr/share/applications/$APP_NAME.desktop" << EOF
 [Desktop Entry]
 Name=Bora
-Comment=Screen Capture and Floating Window Utility
+Name[ko]=보라
+Comment=Screen Capture Utility
+Comment[ko]=화면 캡처 유틸리티
 Exec=/usr/bin/$APP_NAME
-Icon=$PACKAGE_NAME
-Type=Application
-Categories=Utility;
+Icon=$APP_NAME
 Terminal=false
+Type=Application
+Categories=Utility;Graphics;
+Keywords=screenshot;capture;image;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
 EOF
 
 # 4. Create Control File
-echo "📝 Generating control file..."
-INSTALLED_SIZE=$(du -s "$STAGING_DIR" | cut -f1)
+echo "[4/5] Creating control file..."
 
-cat > "$STAGING_DIR/DEBIAN/control" <<EOF
-Package: $PACKAGE_NAME
+cat > "$WORK_DIR/DEBIAN/control" << EOF
+Package: $APP_NAME
 Version: $VERSION
 Section: utils
 Priority: optional
 Architecture: $ARCH
-Depends: libxcb-cursor0, gnome-screenshot, libxcb-xinerama0
-Maintainer: DINKI <dinki@example.com>
-Description: Screen capture and input utility for Ubuntu
- Floating window capture tool with clipboard features.
+Depends: python3, libxcb-cursor0, gnome-screenshot
+Maintainer: DINKIssTyle <dinki@me.com>
+Description: Screen Capture Utility
+ Bora is a screen capture tool that allows you to capture selected areas
+ and pin them as floating windows on your desktop.
 EOF
 
-# 5. Create Post-Install Script (Optional, for permissions)
-# We need to warn user about 'input' group or udev rules. 
-# Simplest is just a message.
-cat > "$STAGING_DIR/DEBIAN/postinst" <<EOF
-#!/bin/sh
-echo "DINKIssTyle-Bora installed!"
-echo "NOTE: To use global hotkeys, your user usually needs to be in the 'input' group."
-echo "Run: sudo usermod -aG input \$USER"
-echo "Then logout and login again."
-exit 0
-EOF
-chmod 755 "$STAGING_DIR/DEBIAN/postinst"
+# 5. Build Package
+echo "[5/5] Building .deb package..."
+dpkg-deb --build "$WORK_DIR" "${APP_NAME}_${VERSION}_${ARCH}.deb"
 
-# 6. Build .deb
-echo "📦 Packaging..."
-dpkg-deb --build "$STAGING_DIR"
-
-echo "✅ Build Complete!"
-echo "Generated: $(ls $OUTPUT_DIR/*.deb)"
+echo
+echo "==================================="
+echo "  Package created: ${APP_NAME}_${VERSION}_${ARCH}.deb"
+echo "==================================="

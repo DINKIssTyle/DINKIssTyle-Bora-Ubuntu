@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Bora
+Name[ko]=보라
+Comment=Screen Capture Utility
+Comment[ko]=화면 캡처 유틸리티
+Exec=python3 /home/dinki/Documents/GitHub/DINKIssTyle-Bora-Ubuntu/main.py
+Icon=/home/dinki/Documents/GitHub/DINKIssTyle-Bora-Ubuntu/assets/icon.png
+Terminal=false
+Type=Application
+Categories=Utility;Graphics;
+Keywords=screenshot;capture;image;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
